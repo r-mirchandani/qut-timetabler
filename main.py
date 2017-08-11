@@ -82,8 +82,8 @@ def getUnitTimes(unit):
         else:
             activities[activityName] = [timeTuple]
 
-        print(activities)
-        return activities
+    print(activities)
+    return activities
 
 # main loop
 if __name__ == '__main__':
