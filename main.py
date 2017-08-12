@@ -2,45 +2,62 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from datetime import datetime
 import random
-
 from search import *
 
-class TimetableProblem:
-    def __init__(self, vars, domain):
-        # vars = [days: {times}]
-        self.vars = vars
-        self.domain = domain # tuples of required classes to map
-
-    def assign(self, val, assignment, name):
-        length = val[2]
-        segments = length / 30
-        for i in range(int(segments)):
-            assignment[val[0]][val[1] + i*50] = name
-
-    def unassign(self, val, assignment):
-        assignment[0][val[1]] = 0
-
-    def conflicts(self, val, assignment):
-        c = 0
-        length = val[2]
-        segments = length / 30
-        for i in range(1, int(segments)+1):
-            if assignment[0][val[1] + i * 50] != 0:
-                c += 1
-        return c
-
 class TimetableProblem2(Problem):
+
+    GAP_PENALTY = 5
+    DAY_PENALTY = 100
+
     def __init__(self, inital, domain):
         self.initial = inital
         self.domain = domain
 
     def actions(self, state):
-
+        pass
 
     def result(self, state, action):
+        pass
+
+    def h(self, current):
+        h = 0
+        classFound = False
+        for day in current:
+            gap = 0
+            for time, slot in day:
+                if not classFound:
+                    if slot is None:
+                        continue
+                    else:
+                        classFound = True
+                else:
+                    if slot is None:
+                        gap += GAP_PENALTY
+                    elif gap != 0:
+                        h += gap**2
+                        gap = 0
+            if classFound:
+                h += DAY_PENALTY
 
 
-    def h(selfs, state):
+
+def assign(val, assignment, name):
+    length = val[2]
+    segments = length / 30
+    for i in range(int(segments)):
+        assignment[val[0]][val[1] + i*50] = name
+
+def unassign(val, assignment):
+    assignment[0][val[1]] = 0
+
+def conflicts(val, assignment):
+    c = 0
+    length = val[2]
+    segments = length / 30
+    for i in range(1, int(segments)+1):
+        if assignment[0][val[1] + i * 50] != 0:
+            c += 1
+    return c
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
@@ -58,12 +75,12 @@ def argmin_random_tie(seq, fn):
                 best = x
     return best
 
-def min_conflicts_value(csp, domain, current):
-    return argmin_random_tie(domain, lambda val: csp.conflicts(val, current))
+def min_conflicts_value(domain, current):
+    return argmin_random_tie(domain, lambda val: conflicts(val, current))
 
 def convertDateStrToInt(dateStr):
     dt = datetime.strptime(dateStr, '%I:%M%p')
-    return dt.hour * 100
+    return dt.hour * 100 + dt.minute
 
 def createNoConflictSolution(unitActivities):
     current = list()
@@ -72,8 +89,6 @@ def createNoConflictSolution(unitActivities):
         current.append(dict())
         for j in range(800, 2150, 50):
             current[i][j] = None
-
-    csp = TimetableProblem(current, unitActivities)
 
     assigned = list()
     required = list()
@@ -86,17 +101,17 @@ def createNoConflictSolution(unitActivities):
             for activity, times in activities.items():
                 if activity not in assigned:
                     # pick a class to assign based on minimum conflicts
-                    assignmentTime = min_conflicts_value(csp, times, current)
+                    assignmentTime = min_conflicts_value(times, current)
 
                     # replacement if minimum conflict requires removing activity from a occupied time slot
                     # the removed activity must be marked so that it can be re-evaluated for a new conflict free time
-                    if current[assignmentTime[0]][assignmentTime[1]] != None:
+                    if current[assignmentTime[0]][assignmentTime[1]] is not None:
                         preExisting = current[assignmentTime[0]][assignmentTime[1]]
                         assigned.remove(preExisting)
-                        csp.unassign(assignmentTime, current)
+                        unassign(assignmentTime, current)
 
                     # assign activity to timeslot and record that it has been assigned
-                    csp.assign(assignmentTime, current, activity)
+                    assign(assignmentTime, current, activity)
                     assigned.append(activity)
 
     return current
