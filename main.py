@@ -13,6 +13,10 @@ class Timetable:
     def __hash__(self):
         return functools.reduce(operator.xor, [hash(frozenset(day)) for day in self.timetable])
 
+    def copy(self):
+        cp = Timetable(self.timetable)
+        return cp
+
 class TimetableProblem(Problem):
 
     def __init__(self, inital, domain):
@@ -34,7 +38,10 @@ class TimetableProblem(Problem):
         return actions
 
     def result(self, timetable, action):
-        state = timetable.timetable
+
+        cp = timetable.copy()
+
+        state = cp.timetable
         oldPos = action[1]
         newPos = action[2]
 
@@ -44,10 +51,9 @@ class TimetableProblem(Problem):
         for time in range(newPos[1], newPos[1] + newPos[2], 50):
             state[newPos[0]][time] = action[0]
 
-        return state
+        return cp
 
     def h(self, node):
-
         h = 0
         classFound = False
         for day in node.state.timetable:
@@ -66,10 +72,10 @@ class TimetableProblem(Problem):
                         gap = 0
             if classFound:
                 h += self.DAY_PENALTY
+        return h
 
     def goal_test(self, state):
         return False
-
 
 
 def assign(val, assignment, name):
