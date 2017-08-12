@@ -14,23 +14,26 @@ class Timetable:
         rows = list()
         for i in range(len(times)):
             rows.append([times[i]])
-            for j in range(len(self.timetable)):
-                rows[i].append(self.timetable[j][800 + 50 * i])
+            for j in range(len(self.days)):
+                rows[i].append(self.days[j][800 + 50 * i])
 
         return tabulate(rows, ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'], tablefmt='grid')
 
 
     def __init__(self, state):
-        self.timetable = state
+        self.days = state
+
+    def __eq__(self, other):
+        return self.days == other.days
 
     def __hash__(self):
-        return functools.reduce(operator.xor, [hash(frozenset(day)) for day in self.timetable])
+        return functools.reduce(operator.xor, [hash(frozenset(day)) for day in self.days])
 
     def copy(self):
-        days = list()
-        for day in self.timetable:
-            days.append(dict(day))
-        return Timetable(days)
+        newDays = list()
+        for day in self.days:
+            newDays.append(dict(day))
+        return Timetable(newDays)
 
 class TimetableProblem(Problem):
 
@@ -42,7 +45,7 @@ class TimetableProblem(Problem):
 
     def actions(self, timetable):
         seen = set()
-        state = timetable.timetable
+        state = timetable.days
         actions = list()
         for d, day in enumerate(state):
             for time, activity in day.items():
@@ -62,7 +65,7 @@ class TimetableProblem(Problem):
 
         cp = timetable.copy()
 
-        state = cp.timetable
+        state = cp.days
         oldPos = action[1]
         newPos = action[2]
 
@@ -76,8 +79,8 @@ class TimetableProblem(Problem):
 
     def h(self, node):
         h = 0
-        classFound = False
-        for day in node.state.timetable:
+        for day in node.state.days:
+            classFound = False
             gap = 0
             for time, slot in day.items():
                 if not classFound:

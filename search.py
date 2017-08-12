@@ -248,17 +248,17 @@ def best_first_graph_search(problem, f):
         node = frontier.pop()
         for i in range(3):
             if bestNodes[i] is None or f(node) < f(bestNodes[i]):
-                print(f(node))
-                bestNodes[i] = node
+                bestNodes.insert(i, node)
+                bestNodes.pop()
                 break
-        if time() - t0 > 1:
+        if time() - t0 > 10:
             return bestNodes
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
                 frontier.append(child)
             elif child in frontier:
-                incumbent = frontier[child] # incumbent is a node
+                incumbent = frontier[child]  # incumbent is a node
                 if f(child) < f(incumbent):
                     del frontier[incumbent]
                     frontier.append(child)
