@@ -244,25 +244,14 @@ def best_first_graph_search(problem, f):
     frontier = PriorityQueue(f)
     frontier.append(node)
     explored = set()
-    t0 = time()
-    bestH = 1000000
     while frontier:
         node = frontier.pop()
-<<<<<<< Updated upstream
         for i in range(3):
             if bestNodes[i] is None or f(node) < f(bestNodes[i]):
                 bestNodes[i] = node
                 break
-        if (time() - t0 > 60):
+        if time() - t0 > 60:
             return bestNodes
-=======
-        if problem.h(node) < bestH:
-            best = node
-            bestH = problem.h(node)
-        t1 = time()
-        if t1 - t0 > 60:
-            return best
->>>>>>> Stashed changes
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
@@ -272,4 +261,4 @@ def best_first_graph_search(problem, f):
                 if f(child) < f(incumbent):
                     del frontier[incumbent]
                     frontier.append(child)
-    return best
+    return bestNodes
