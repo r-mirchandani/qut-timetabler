@@ -28,15 +28,8 @@ class TimetableProblem():
         return c
 
     def score(self, current, required):
-        score = 0
-        for i, day in enumerate(current):
-            for time, allocation in day.items():
-                if allocation == 0:
-                    score -= 30
-                else:
-                    score += required[i][1]
-
-            return score
+        # TODO put heuristic here
+        pass
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
@@ -138,4 +131,5 @@ if __name__ == '__main__':
                     assigned.append(activity)
 
     print(csp.score(current, required))
-    print(current)
+    for day in current:
+        print(day)
