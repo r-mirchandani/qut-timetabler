@@ -39,18 +39,21 @@ class TimetableProblem(Problem):
         self.DAY_PENALTY = 100
 
     def actions(self, timetable):
+        seen = set()
         state = timetable.timetable
         actions = list()
         for d, day in enumerate(state):
             for time, activity in day.items():
                 if activity is not None:
-                    for subject in self.domain:
-                        if activity in subject:
-                            others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
-                            for t in others:
-                                if not conflicts(t, state):
-                                    actions.append((activity, (d, time, t[2]), t))
-                            continue
+                    if activity not in seen:
+                        seen.add(activity)
+                        for subject in self.domain:
+                            if activity in subject:
+                                others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
+                                for t in others:
+                                    if not conflicts(t, state):
+                                        actions.append((activity, (d, time, t[2]), t))
+                                break
         return actions
 
     def result(self, timetable, action):
@@ -100,16 +103,19 @@ def assign(val, assignment, name):
     for i in range(int(segments)):
         assignment[val[0]][val[1] + i*50] = name
 
-def unassign(val, assignment):
-    length = val[2]
-    segments = length / 50
-    for i in range(int(segments)):
-        assignment[0][val[1]] = None
+def unassign(val, assignment, preExisiting):
+    # length = val[2]
+    # segments = length / 50
+    # for i in range(int(segments)):
+    #     assignment[0][val[1]] = None
+    for time in assignment[val[0]]:
+        if time == preExisiting:
+            time = 0
 
 def conflicts(val, assignment):
     length = val[2]
     segments = length / 50
-    for i in range(1, int(segments)+1):
+    for i in range(int(segments)+1):
         if assignment[val[0]][val[1] + i * 50] is not None:
             return 1
     return 0
@@ -160,10 +166,10 @@ def createNoConflictSolution(unitActivities):
 
                     # replacement if minimum conflict requires removing activity from a occupied time slot
                     # the removed activity must be marked so that it can be re-evaluated for a new conflict free time
-                    if current[assignmentTime[0]][assignmentTime[1]] is not None:
+                    if conflicts(assignmentTime, current):
                         preExisting = current[assignmentTime[0]][assignmentTime[1]]
                         assigned.remove(preExisting)
-                        unassign(assignmentTime, current)
+                        unassign(assignmentTime, current, preExisting)
 
                     # assign activity to timeslot and record that it has been assigned
                     assign(assignmentTime, current, activity)
@@ -219,9 +225,8 @@ if __name__ == '__main__':
     for days in noConflict:
         print(days)
 
-
     timetable = Timetable(noConflict)
-    print(timetable)
+    print('Calculating...')
     tp = TimetableProblem(timetable, unitActivities)
     best = best_first_graph_search(tp, lambda s: tp.h(s))
     print(best)
