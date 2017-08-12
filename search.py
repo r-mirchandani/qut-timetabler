@@ -250,7 +250,7 @@ def best_first_graph_search(problem, f):
             if bestNodes[i] is None or f(node) < f(bestNodes[i]):
                 bestNodes[i] = node
                 break
-        if (time() - t0 > 60):
+        if time() - t0 > 60:
             return bestNodes
         explored.add(node.state)
         for child in node.expand(problem):

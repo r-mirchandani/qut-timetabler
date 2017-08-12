@@ -27,8 +27,10 @@ class Timetable:
         return functools.reduce(operator.xor, [hash(frozenset(day)) for day in self.timetable])
 
     def copy(self):
-        cp = Timetable(self.timetable)
-        return cp
+        days = list()
+        for day in self.timetable:
+            days.append(dict(day))
+        return Timetable(days)
 
 class TimetableProblem(Problem):
 
