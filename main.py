@@ -47,11 +47,8 @@ class TimetableProblem():
                     elif gap != 0:
                         h += gap**2
                         gap = 0
-                if classFound:
-                    h += DAY_PENALTY
-
-
-
+            if classFound:
+                h += DAY_PENALTY
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
