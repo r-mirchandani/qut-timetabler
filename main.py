@@ -3,29 +3,38 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import random
 from search import *
+import functools
+import operator
+
+class Timetable:
+    def __init__(self, state):
+        self.timetable = state
+
+    def __hash__(self):
+        return functools.reduce(operator.xor, [hash(frozenset(day)) for day in self.timetable])
 
 class TimetableProblem(Problem):
-
-    GAP_PENALTY = 5
-    DAY_PENALTY = 100
 
     def __init__(self, inital, domain):
         self.initial = inital
         self.domain = domain
+        self.GAP_PENALTY = 5
+        self.DAY_PENALTY = 100
 
-    def actions(self, state):
+    def actions(self, timetable):
         actions = list()
-        for d, day in enumerate(state):
+        for d, day in enumerate(timetable.timetable):
             for time, activity in day.items():
                 if activity is not None:
                     for subject in self.domain:
                         if activity in subject:
                             others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
                             for t in others:
-                                actions.append((activity, t))
+                                actions.append((activity, (d, time, t[2]), t))
         return actions
 
-    def result(self, state, action):
+    def result(self, timetable, action):
+        state = timetable.timetable
         oldPos = action[1]
         newPos = action[2]
 
@@ -37,12 +46,13 @@ class TimetableProblem(Problem):
 
         return state
 
-    def h(self, state):
+    def h(self, node):
+
         h = 0
         classFound = False
-        for day in state:
+        for day in node.state.timetable:
             gap = 0
-            for time, slot in day:
+            for time, slot in day.items():
                 if not classFound:
                     if slot is None:
                         continue
@@ -50,12 +60,12 @@ class TimetableProblem(Problem):
                         classFound = True
                 else:
                     if slot is None:
-                        gap += GAP_PENALTY
+                        gap += self.GAP_PENALTY
                     elif gap != 0:
                         h += gap**2
                         gap = 0
             if classFound:
-                h += DAY_PENALTY
+                h += self.DAY_PENALTY
 
     def goal_test(self, state):
         return False
@@ -188,5 +198,7 @@ if __name__ == '__main__':
     for days in noConflict:
         print(days)
 
-    tp = TimetableProblem(noConflict, unitActivities)
+
+    timetable = Timetable(noConflict)
+    tp = TimetableProblem(timetable, unitActivities)
     best = best_first_graph_search(tp, lambda s: tp.h(s))
