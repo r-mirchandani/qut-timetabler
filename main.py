@@ -26,15 +26,18 @@ class TimetableProblem(Problem):
         self.DAY_PENALTY = 100
 
     def actions(self, timetable):
+        state = timetable.timetable
         actions = list()
-        for d, day in enumerate(timetable.timetable):
+        for d, day in enumerate(state):
             for time, activity in day.items():
                 if activity is not None:
                     for subject in self.domain:
                         if activity in subject:
                             others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
                             for t in others:
-                                actions.append((activity, (d, time, t[2]), t))
+                                if not conflicts(t, state):
+                                    actions.append((activity, (d, time, t[2]), t))
+                            continue
         return actions
 
     def result(self, timetable, action):
@@ -91,13 +94,12 @@ def unassign(val, assignment):
         assignment[0][val[1]] = 0
 
 def conflicts(val, assignment):
-    c = 0
     length = val[2]
     segments = length / 50
     for i in range(1, int(segments)+1):
-        if assignment[0][val[1] + i * 50] != 0:
-            c += 1
-    return c
+        if assignment[val[0]][val[1] + i * 50] is not None:
+            return 1
+    return 0
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
@@ -195,7 +197,7 @@ def getUnitTimes(unit):
 if __name__ == '__main__':
 
     # init
-    units = ['EGH404', 'CAB403', 'CAB401', 'EGB342']
+    units = ['EGH404', 'CAB403', 'CAB401', 'CAB240']
     unitActivities = generateClasses(units)
 
     # create default no conflict solution
@@ -208,3 +210,4 @@ if __name__ == '__main__':
     timetable = Timetable(noConflict)
     tp = TimetableProblem(timetable, unitActivities)
     best = best_first_graph_search(tp, lambda s: tp.h(s))
+    print(best)
