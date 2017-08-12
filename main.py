@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import random
 
-class TimetableProblem():
+from search import *
+
+class TimetableProblem:
     def __init__(self, vars, domain):
         # vars = [days: {times}]
         self.vars = vars
@@ -27,9 +29,18 @@ class TimetableProblem():
                 c += 1
         return c
 
-    def score(self, current, required):
-        # TODO put heuristic here
-        pass
+class TimetableProblem2(Problem):
+    def __init__(self, inital, domain):
+        self.initial = inital
+        self.domain = domain
+
+    def actions(self, state):
+
+
+    def result(self, state, action):
+
+
+    def h(selfs, state):
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
@@ -54,10 +65,49 @@ def convertDateStrToInt(dateStr):
     dt = datetime.strptime(dateStr, '%I:%M%p')
     return dt.hour * 100
 
-def getUnitTimes(unit):
+def createNoConflictSolution(unitActivities):
+    current = list()
+    steps, max_steps = 0, 1000
+    for i in range(5):
+        current.append(dict())
+        for j in range(800, 2150, 50):
+            current[i][j] = None
 
-    def numTimes(list):
-        return len(list)
+    csp = TimetableProblem(current, unitActivities)
+
+    assigned = list()
+    required = list()
+    for unit in unitActivities:
+        for activity in unit:
+            required.append((activity, unit[activity][0][2]))
+
+    while len(assigned) != len(required):
+        for activities in unitActivities:
+            for activity, times in activities.items():
+                if activity not in assigned:
+                    # pick a class to assign based on minimum conflicts
+                    assignmentTime = min_conflicts_value(csp, times, current)
+
+                    # replacement if minimum conflict requires removing activity from a occupied time slot
+                    # the removed activity must be marked so that it can be re-evaluated for a new conflict free time
+                    if current[assignmentTime[0]][assignmentTime[1]] != None:
+                        preExisting = current[assignmentTime[0]][assignmentTime[1]]
+                        assigned.remove(preExisting)
+                        csp.unassign(assignmentTime, current)
+
+                    # assign activity to timeslot and record that it has been assigned
+                    csp.assign(assignmentTime, current, activity)
+                    assigned.append(activity)
+
+    return current
+
+def generateClasses(units):
+    unitActivities = list()
+    for i in range(len(units)):
+        unitActivities.append(getUnitTimes(units[i]))
+    return unitActivities
+
+def getUnitTimes(unit):
 
     f = urlopen('https://qutvirtual3.qut.edu.au/qvpublic/ttab_unit_search_p.process_search?p_time_period_id=293859&p_unit_cd=' + unit)
     bsObj = BeautifulSoup(f.read(), "html.parser")
@@ -91,45 +141,10 @@ if __name__ == '__main__':
 
     # init
     units = ['EGH404', 'CAB403', 'CAB401', 'EGB342']
-    unitActivities = list()
-    for i in range(len(units)):
-        unitActivities.append(getUnitTimes(units[i]))
+    unitActivities = generateClasses(units)
 
-    current = list()
-    steps, max_steps = 0, 1000
-    for i in range(5):
-        current.append(dict())
-        for j in range(800, 2150, 50):
-            current[i][j] = 0
-
-    maxDays = 3
-
-    csp = TimetableProblem(current, unitActivities)
-
-    assigned = list()
-    required = list()
-    for unit in unitActivities:
-        for activity in unit:
-            required.append((activity, unit[activity][0][2]))
-
-    while len(assigned) != len(required):
-        for activities in unitActivities:
-            for activity, times in activities.items():
-                if activity not in assigned:
-                    hConstrainedTimes = 0
-                    assignmentTime = min_conflicts_value(csp, times, current)
-
-                    # replacement if minimum conflict requires removing activity from a occupied time slot
-                    # the removed activity must be marked so that it can be re-evaluated for a new conflict free time
-                    if current[assignmentTime[0]][assignmentTime[1]] != 0:
-                        preExisting = current[assignmentTime[0]][assignmentTime[1]]
-                        assigned.remove(preExisting)
-                        csp.unassign(assignmentTime, current)
-
-                    # assign activity to timeslot and record that it has been assigned
-                    csp.assign(assignmentTime, current, activity)
-                    assigned.append(activity)
-
-    print(csp.score(current, required))
-    for day in current:
-        print(day)
+    # create default no conflict solution
+    noConflict = createNoConflictSolution(unitActivities)
+    print('\n')
+    for days in noConflict:
+        print(days)
