@@ -14,7 +14,15 @@ class TimetableProblem(Problem):
         self.domain = domain
 
     def actions(self, state):
-        pass
+        actions = list()
+        for d, day in enumerate(state):
+            for time, activity in day.items():
+                if activity is not None:
+                    for subject in self.domain:
+                        if activity in subject:
+                            others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
+                            for t in others:
+                                actions.append((activity, t))
 
     def result(self, state, action):
         oldPos = action[1]
