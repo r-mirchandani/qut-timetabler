@@ -5,8 +5,21 @@ import random
 from search import *
 import functools
 import operator
+from tabulate import tabulate
 
 class Timetable:
+    def __str__(self):
+        times = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '1:00', '1:30', '2:00', '2:30', '3:00',
+                 '4:00', '4:30', '5:00', '5:30', '6:00', '6:30', '7:00', '7:30', '8:00', '8:30']
+        rows = list()
+        for i in range(len(times)):
+            rows.append([times[i]])
+            for j in range(len(self.timetable)):
+                rows[i].append(self.timetable[j][800 + 50 * i])
+
+        return tabulate(rows, ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'], tablefmt='grid')
+
+
     def __init__(self, state):
         self.timetable = state
 
@@ -91,7 +104,7 @@ def unassign(val, assignment):
     length = val[2]
     segments = length / 50
     for i in range(int(segments)):
-        assignment[0][val[1]] = 0
+        assignment[0][val[1]] = None
 
 def conflicts(val, assignment):
     length = val[2]
@@ -208,6 +221,7 @@ if __name__ == '__main__':
 
 
     timetable = Timetable(noConflict)
+    print(timetable)
     tp = TimetableProblem(timetable, unitActivities)
     best = best_first_graph_search(tp, lambda s: tp.h(s))
     print(best)
