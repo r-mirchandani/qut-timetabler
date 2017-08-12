@@ -10,7 +10,7 @@ from tabulate import tabulate
 class Timetable:
     def __str__(self):
         times = ['8:00', '8:30', '9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '1:00', '1:30', '2:00', '2:30', '3:00',
-                 '4:00', '4:30', '5:00', '5:30', '6:00', '6:30', '7:00', '7:30', '8:00', '8:30']
+                 '4:00', '4:30', '5:00', '5:30', '6:00', '6:30', '7:00', '7:30', '8:00', '8:30', '9:00', '9:30']
         rows = list()
         for i in range(len(times)):
             rows.append([times[i]])
@@ -119,8 +119,8 @@ def unassign(val, assignment, preExisiting):
 
 def conflicts(val, assignment):
     length = val[2]
-    segments = length / 50
-    for i in range(int(segments)+1):
+    segments = int(length / 50)
+    for i in range(segments):
         if assignment[val[0]][val[1] + i * 50] is not None:
             return 1
     return 0
@@ -153,8 +153,8 @@ def createNoConflictSolution(unitActivities):
     steps, max_steps = 0, 1000
     for i in range(5):
         current.append(dict())
-        for j in range(800, 2150, 50):
-            current[i][j] = None
+        for j in range(800, 2200, 50):  # TODO: This was 2150 as max and I changed the end time from 9 to 10,
+            current[i][j] = None        # TODO this would change to 2250 but I cannot see why it needs to go past 2200
 
     assigned = list()
     required = list()
@@ -182,17 +182,24 @@ def createNoConflictSolution(unitActivities):
 
     return current
 
-def generateClasses(units):
+def generateClasses(units, semester):
     unitActivities = list()
-    for i in range(len(units)):
-        unitActivities.append(getUnitTimes(units[i]))
+    for unit in units:
+        unitActivities.append(getUnitTimes(unit, semester))
     return unitActivities
 
-def getUnitTimes(unit):
-
-    f = urlopen('https://qutvirtual3.qut.edu.au/qvpublic/ttab_unit_search_p.process_search?p_time_period_id=293859&p_unit_cd=' + unit)
+def findRows(url, unit):
+    f = urlopen(url + unit)
     bsObj = BeautifulSoup(f.read(), "html.parser")
-    rows = bsObj.find_all('tr')
+    return bsObj.find_all('tr')
+
+def getUnitTimes(unit, semester):
+    semesterCodes = ['3598', '293859', '3597', '293860']
+    rows = findRows('https://qutvirtual3.qut.edu.au/qvpublic/ttab_unit_search_p.process_search?p_time_period_id='
+                    + semesterCodes[semester - 1] + '&p_unit_cd=', unit)
+    if len(rows) is 0:
+        rows = findRows('https://qutvirtual3.qut.edu.au/qvpublic/ttab_unit_search_p.process_search?p_time_period_id='
+                        + semesterCodes[semester + 1] + '&p_unit_cd=', unit)
     rows = rows[1:]
     activities = dict()
     dayConversion = {'MON' : 0, 'TUE' : 1, 'WED' : 2, 'THU' : 3, 'FRI' : 4}
@@ -221,8 +228,8 @@ def getUnitTimes(unit):
 if __name__ == '__main__':
 
     # init
-    units = ['EGH404', 'CAB403', 'CAB401', 'CAB240']
-    unitActivities = generateClasses(units)
+    units = ['AMB240', 'AMB202', 'KCB205', 'KJB103']
+    unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
     noConflict = createNoConflictSolution(unitActivities)
@@ -234,5 +241,11 @@ if __name__ == '__main__':
     print('Calculating...')
     tp = TimetableProblem(timetable, unitActivities)
     bestNodes = best_first_graph_search(tp, lambda s: tp.h(s))
+    i = 1
     for node in bestNodes:
-        print(node.state)
+        if node is not None:
+            print('\n############################## SOLUTION ' + str(i) + ' ##############################\n')
+            print(node.state)
+            i += 1
+        else:
+            break
