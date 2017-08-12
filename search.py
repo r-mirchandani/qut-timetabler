@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+from time import time
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #                           UTILS
@@ -224,7 +225,7 @@ def breadth_first_graph_search(problem):
     "Graph search version of BFS.  [Fig. 3.11]"
     return graph_search(problem, FIFOQueue())
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def best_first_graph_search(problem, f):
     """
@@ -238,15 +239,19 @@ def best_first_graph_search(problem, f):
     """
     f = memoize(f)
     node = Node(problem.initial)
-    if problem.goal_test(node.state):
-        return node
+    bestNodes = [node, None, None]
+    t0 = time()
     frontier = PriorityQueue(f)
     frontier.append(node)
     explored = set()
     while frontier:
         node = frontier.pop()
-        if problem.goal_test(node.state):
-            return node
+        for i in range(3):
+            if bestNodes[i] is None or f(node) < f(bestNodes[i]):
+                bestNodes[i] = node
+                break
+        if (time() - t0 > 60):
+            return bestNodes
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
