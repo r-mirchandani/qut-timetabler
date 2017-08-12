@@ -109,13 +109,9 @@ def assign(val, assignment, name):
         assignment[val[0]][val[1] + i*50] = name
 
 def unassign(val, assignment, preExisiting):
-    # length = val[2]
-    # segments = length / 50
-    # for i in range(int(segments)):
-    #     assignment[0][val[1]] = None
     for time in assignment[val[0]]:
         if time == preExisiting:
-            time = 0
+            time = None
 
 def conflicts(val, assignment):
     length = val[2]
@@ -149,6 +145,7 @@ def convertDateStrToInt(dateStr):
     return dt.hour * 100 + int(dt.minute * 5/3.0)
 
 def createNoConflictSolution(unitActivities):
+    random.seed(hash(time()))
     current = list()
     steps, max_steps = 0, 1000
     for i in range(5):
