@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import random
 
+GAP_PENALTY = 5
+DAY_PENALTY = 100
+
 class TimetableProblem():
     def __init__(self, vars, domain):
         # vars = [days: {times}]
@@ -27,9 +30,28 @@ class TimetableProblem():
                 c += 1
         return c
 
-    def score(self, current, required):
-        # TODO put heuristic here
-        pass
+    def h(self, current):
+        h = 0
+        classFound = False
+        for day in current:
+            gap = 0
+            for time, slot in day:
+                if not classFound:
+                    if slot is None:
+                        continue
+                    else:
+                        classFound = True
+                else:
+                    if slot is None:
+                        gap += GAP_PENALTY
+                    elif gap != 0:
+                        h += gap**2
+                        gap = 0
+                if classFound:
+                    h += DAY_PENALTY
+
+
+
 
 def argmin_random_tie(seq, fn):
     """Return an element with lowest fn(seq[i]) score; break ties at random.
@@ -52,7 +74,7 @@ def min_conflicts_value(csp, domain, current):
 
 def convertDateStrToInt(dateStr):
     dt = datetime.strptime(dateStr, '%I:%M%p')
-    return dt.hour * 100
+    return dt.hour * 100 + dt.minute
 
 def getUnitTimes(unit):
 
@@ -100,7 +122,7 @@ if __name__ == '__main__':
     for i in range(5):
         current.append(dict())
         for j in range(800, 2150, 50):
-            current[i][j] = 0
+            current[i][j] = None
 
     maxDays = 3
 
