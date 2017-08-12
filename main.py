@@ -4,7 +4,7 @@ from datetime import datetime
 import random
 from search import *
 
-class TimetableProblem2(Problem):
+class TimetableProblem(Problem):
 
     GAP_PENALTY = 5
     DAY_PENALTY = 100
@@ -17,12 +17,19 @@ class TimetableProblem2(Problem):
         pass
 
     def result(self, state, action):
-        pass
+        oldPos = action[1]
+        newPos = action[2]
 
-    def h(self, current):
+        for time in range(oldPos[1], oldPos[1] + oldPos[2], 50):
+            state[oldPos[0]][time] = None
+
+        for time in range(newPos[1], newPos[1] + newPos[2], 50):
+            state[newPos[0]][time] = action[0]
+
+    def h(self, state):
         h = 0
         classFound = False
-        for day in current:
+        for day in state:
             gap = 0
             for time, slot in day:
                 if not classFound:
@@ -43,7 +50,7 @@ class TimetableProblem2(Problem):
 
 def assign(val, assignment, name):
     length = val[2]
-    segments = length / 30
+    segments = length / 50
     for i in range(int(segments)):
         assignment[val[0]][val[1] + i*50] = name
 
@@ -53,7 +60,7 @@ def unassign(val, assignment):
 def conflicts(val, assignment):
     c = 0
     length = val[2]
-    segments = length / 30
+    segments = length / 50
     for i in range(1, int(segments)+1):
         if assignment[0][val[1] + i * 50] != 0:
             c += 1
@@ -80,7 +87,7 @@ def min_conflicts_value(domain, current):
 
 def convertDateStrToInt(dateStr):
     dt = datetime.strptime(dateStr, '%I:%M%p')
-    return dt.hour * 100 + dt.minute
+    return dt.hour * 100 + int(dt.minute * 5/3.0)
 
 def createNoConflictSolution(unitActivities):
     current = list()
@@ -140,7 +147,7 @@ def getUnitTimes(unit):
 
         startTime = convertDateStrToInt(dateStrings[0])
 
-        duration = int((convertDateStrToInt(dateStrings[1]) - startTime) * 0.6)
+        duration = (convertDateStrToInt(dateStrings[1]) - startTime)
 
         timeTuple = (dayConversion[dayStr], startTime, duration)
         if activityName in activities:
