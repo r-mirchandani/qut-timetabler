@@ -23,6 +23,7 @@ class TimetableProblem(Problem):
                             others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
                             for t in others:
                                 actions.append((activity, t))
+        return actions
 
     def result(self, state, action):
         oldPos = action[1]
@@ -33,6 +34,8 @@ class TimetableProblem(Problem):
 
         for time in range(newPos[1], newPos[1] + newPos[2], 50):
             state[newPos[0]][time] = action[0]
+
+        return state
 
     def h(self, state):
         h = 0
@@ -54,6 +57,9 @@ class TimetableProblem(Problem):
             if classFound:
                 h += DAY_PENALTY
 
+    def goal_test(self, state):
+        return False
+
 
 
 def assign(val, assignment, name):
@@ -63,7 +69,10 @@ def assign(val, assignment, name):
         assignment[val[0]][val[1] + i*50] = name
 
 def unassign(val, assignment):
-    assignment[0][val[1]] = 0
+    length = val[2]
+    segments = length / 50
+    for i in range(int(segments)):
+        assignment[0][val[1]] = 0
 
 def conflicts(val, assignment):
     c = 0
@@ -178,3 +187,6 @@ if __name__ == '__main__':
     print('\n')
     for days in noConflict:
         print(days)
+
+    tp = TimetableProblem(noConflict, unitActivities)
+    best = best_first_graph_search(tp, lambda s: tp.h(s))
