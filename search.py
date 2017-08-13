@@ -239,14 +239,14 @@ def best_first_graph_search(problem, f):
     """
     f = memoize(f)
     node = Node(problem.initial)
-    bestNodes = [None, None, None]
+    bestNodes = [node, None, None]
     frontier = PriorityQueue(f)
     frontier.append(node)
     explored = set()
     while frontier:
         node = frontier.pop()
         for i in range(3):
-            if len(node.state.unplacedUnits) is 0 and (bestNodes[i] is None or f(node) < f(bestNodes[i])):
+            if bestNodes[i] is None or (f(node) < f(bestNodes[i]) and len(node.state.unplacedUnits) <= len(bestNodes[i].state.unplacedUnits)) or len(node.state.unplacedUnits) <= len(bestNodes[i].state.unplacedUnits):
                 bestNodes.insert(i, node)
                 bestNodes.pop()
                 break

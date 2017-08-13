@@ -64,6 +64,7 @@ class TimetableProblem(Problem):
                             break
 
         if len(actions) is 0:
+            print(timetable)
             for d, day in enumerate(state):
                 for time, activity in day.items():
                     if activity is not None:
@@ -291,7 +292,7 @@ if __name__ == '__main__':
     constraints['watchOnline'] = watchOnlineRaw is 'Y' or watchOnlineRaw is 'YES'
 
     # init
-    units = ['AYB340', 'AYB321', 'BSB111', 'EFB210']
+    units = ['CAB202', 'MXB107', 'MXB202', 'IFB130']
     unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
@@ -311,6 +312,7 @@ if __name__ == '__main__':
         if node is not None:
             print('\n############################## SOLUTION ' + str(i) + ' ##############################\n')
             print(node.state)
+            print(tp.h(node))
             i += 1
         else:
             break
