@@ -38,8 +38,8 @@ class Timetable:
 
 class TimetableProblem(Problem):
 
-    def __init__(self, inital, domain, constraints):
-        self.initial = inital
+    def __init__(self, initial, domain, constraints):
+        self.initial = initial
         self.domain = domain
         self.constraints = constraints
 
@@ -64,7 +64,6 @@ class TimetableProblem(Problem):
                             break
 
         if len(actions) is 0:
-            print(timetable)
             for d, day in enumerate(state):
                 for time, activity in day.items():
                     if activity is not None:
@@ -119,7 +118,7 @@ class TimetableProblem(Problem):
                 if not classFound:
                     if slot is None:
                         continue
-                    else:
+                    elif not self.constraints['watchOnline'] or 'LEC' not in slot.split('-')[1]:
                         if int(time) < startTime:
                             h += self.EARLY_PENALTY
                         classFound = True
@@ -135,8 +134,8 @@ class TimetableProblem(Problem):
             if classFound:
                 if noDays and day in noDays:
                     h += self.DAY_PENALTY * 2
-                else:
-                    h += self.DAY_PENALTY
+            else:
+                h += self.DAY_PENALTY
         return h
 
     def goal_test(self, state):
@@ -267,6 +266,7 @@ def getUnitTimes(unit, semester):
         else:
             activities[activityName] = [timeTuple]
 
+    print(activities)
     return activities
 
 # main loop
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
     # determine timetable constraints
     constraints = dict()
-    print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questiosn to help us optimise your timetable to suit your needs.\n')
+    print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questions to help us optimise your timetable to suit your needs.\n')
     constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
     constraints['startWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
     constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
@@ -287,6 +287,8 @@ if __name__ == '__main__':
         constraints['noDays'] = ['']
         constraints['noDayWeight'] = 0
     constraints['gapsWeight'] = int(input('On a scale of 1-5, how much do you dislike gaps in your timetable? '))
+    watchOnlineRaw = input('Are you open to watching lectures online? (Y/N)').capitalize()
+    constraints['watchOnline'] = watchOnlineRaw is 'Y' or watchOnlineRaw is 'YES'
 
     # init
     units = ['AYB340', 'AYB321', 'BSB111', 'EFB210']
