@@ -273,19 +273,12 @@ if __name__ == '__main__':
 
 
     # init
-    units = ['CAB202', 'EGB345', 'EGH418', 'EGH424']
-    unitActivities = generateClasses(units, 2)
-
-
-
-
-
-
-
+    #units = ['CAB403', 'CAB401', 'CAB240', 'EGH404']
 
     # determine timetable constraints
     constraints = dict()
     print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questions to help us optimise your timetable to suit your needs.\n')
+    units = input('What units are you studying this semester? ').split(',')
     constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
     constraints['startWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
@@ -300,6 +293,8 @@ if __name__ == '__main__':
     constraints['gapsWeight'] = int(input('On a scale of 0-5, how much do you dislike gaps in your timetable? '))
     watchOnlineRaw = input('Are you open to watching lectures online? (Y/N)').capitalize()
     constraints['watchOnline'] = watchOnlineRaw == 'Y' or watchOnlineRaw == 'YES'
+
+    unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
     emptyDays = createEmptyDays()
