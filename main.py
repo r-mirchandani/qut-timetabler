@@ -20,8 +20,9 @@ class Timetable:
         return tabulate(rows, ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'], tablefmt='grid')
 
 
-    def __init__(self, state):
+    def __init__(self, state, unplacedUnits):
         self.days = state
+        self.unplacedUnits = unplacedUnits
 
     def __eq__(self, other):
         return self.days == other.days
@@ -33,7 +34,7 @@ class Timetable:
         newDays = list()
         for day in self.days:
             newDays.append(dict(day))
-        return Timetable(newDays)
+        return Timetable(newDays, list(self.unplacedUnits))
 
 class TimetableProblem(Problem):
 
@@ -52,18 +53,28 @@ class TimetableProblem(Problem):
         seen = set()
         state = timetable.days
         actions = list()
-        for d, day in enumerate(state):
-            for time, activity in day.items():
-                if activity is not None:
-                    if activity not in seen:
-                        seen.add(activity)
-                        for subject in self.domain:
-                            if activity in subject:
-                                others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
-                                for t in others:
-                                    if not conflicts(t, state):
-                                        actions.append((activity, (d, time, t[2]), t))
-                                break
+
+        for activity in timetable.unplacedUnits:
+            for subject in self.domain:
+                if activity in subject:
+                    for time in subject[activity]:
+                        if not conflicts(time, state):
+                            actions.append((activity, None, time))
+                            break
+
+        if len(actions) is 0:
+            for d, day in enumerate(state):
+                for time, activity in day.items():
+                    if activity is not None:
+                        if activity not in seen:
+                            seen.add(activity)
+                            for subject in self.domain:
+                                if activity in subject:
+                                    others = [t for t in subject[activity] if (t[1] != time and t[0] != d)]
+                                    for t in others:
+                                        if not conflicts(t, state):
+                                            actions.append((activity, (d, time, t[2]), t))
+                                    break
         return actions
 
     def result(self, timetable, action):
@@ -73,9 +84,11 @@ class TimetableProblem(Problem):
         state = cp.days
         oldPos = action[1]
         newPos = action[2]
-
-        for time in range(oldPos[1], oldPos[1] + oldPos[2], 50):
-            state[oldPos[0]][time] = None
+        if oldPos is not None:
+            for time in range(oldPos[1], oldPos[1] + oldPos[2], 50):
+                state[oldPos[0]][time] = None
+        else:
+            cp.unplacedUnits.remove(action[0])
 
         for time in range(newPos[1], newPos[1] + newPos[2], 50):
             state[newPos[0]][time] = action[0]
@@ -162,6 +175,14 @@ def min_conflicts_value(domain, current):
 def convertDateStrToInt(dateStr):
     dt = datetime.strptime(dateStr, '%I:%M%p')
     return dt.hour * 100 + int(dt.minute * 5/3.0)
+
+def createEmptyDays():
+    current = list()
+    for i in range(5):
+        current.append(dict())
+        for j in range(800, 2200, 50):
+            current[i][j] = None
+    return current
 
 def createNoConflictSolution(unitActivities):
     random.seed(hash(time()))
@@ -260,11 +281,18 @@ if __name__ == '__main__':
 
     # create default no conflict solution
     noConflict = createNoConflictSolution(unitActivities)
+    emptyDays = createEmptyDays()
     print('\n')
     for days in noConflict:
         print(days)
 
-    timetable = Timetable(noConflict)
+    activityList = list()
+    for unitActivity in unitActivities:
+        for key in unitActivity.keys():
+            activityList.append(key)
+
+
+    timetable = Timetable(emptyDays, activityList) # add unplaced units
     print('Calculating...')
     tp = TimetableProblem(timetable, unitActivities, constraints)
     bestNodes = best_first_graph_search(tp, lambda s: tp.h(s))
