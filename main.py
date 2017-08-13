@@ -37,11 +37,16 @@ class Timetable:
 
 class TimetableProblem(Problem):
 
-    def __init__(self, inital, domain):
+    def __init__(self, inital, domain, constraints):
         self.initial = inital
         self.domain = domain
-        self.GAP_PENALTY = 5
+        self.constraints = constraints
+
+        self.GAP_PENALTY = constraints['gapsWeight']
         self.DAY_PENALTY = 100
+
+        self.EARLY_PENALTY = 5 * constraints['startWeight']
+        self.LATE_PENALTY = 5 * constraints['endWeight']
 
     def actions(self, timetable):
         seen = set()
@@ -78,7 +83,17 @@ class TimetableProblem(Problem):
         return cp
 
     def h(self, node):
+        def day2int(days):
+            ints = list()
+            map = {'Monday':0, 'Tuesday':1, 'Wednesday':2, 'Thursday':3, 'Friday':4}
+            for day in days:
+                ints.append(map[day])
+            return ints
+
         h = 0
+        noDays = None
+        if self.constraints['noDays'][0] != '':
+            noDays = day2int(self.constraints['noDays'])
         for day in node.state.days:
             classFound = False
             gap = 0
@@ -95,7 +110,11 @@ class TimetableProblem(Problem):
                         h += gap**2
                         gap = 0
             if classFound:
-                h += self.DAY_PENALTY
+                if noDays:
+                    if day in noDays:
+                        h += self.DAY_PENALTY * 2
+                else:
+                    h += self.DAY_PENALTY
         return h
 
     def goal_test(self, state):
@@ -224,8 +243,19 @@ def getUnitTimes(unit, semester):
 # main loop
 if __name__ == '__main__':
 
+    # determine timetable constraints
+    constraints = dict()
+    print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questiosn to help us optimise your timetable to suit your needs.\n')
+    constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
+    constraints['startWeight'] = int(input('On a scale of 1-10, how strongly would you prefer this? (1-10) '))
+    constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
+    constraints['endWeight'] = int(input('On a scale of 1-10, how strongly would you prefer this? (1-10) '))
+    daysRaw = input('Are there any days you would strongly prefer not to be at uni? ' )
+    constraints['noDays'] = daysRaw.split(',')
+    constraints['gapsWeight'] = int(input('On a scale of 1-10, how much do you dislike gaps in your timetable? '))
+
     # init
-    units = ['AMB240', 'AMB202', 'KCB205', 'KJB103']
+    units = ['CAB401', 'CAB403', 'CAB240', 'EGH404']
     unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
@@ -236,7 +266,7 @@ if __name__ == '__main__':
 
     timetable = Timetable(noConflict)
     print('Calculating...')
-    tp = TimetableProblem(timetable, unitActivities)
+    tp = TimetableProblem(timetable, unitActivities, constraints)
     bestNodes = best_first_graph_search(tp, lambda s: tp.h(s))
     i = 1
     for node in bestNodes:
