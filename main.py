@@ -64,6 +64,7 @@ class TimetableProblem(Problem):
                             break
 
         if len(actions) is 0:
+            print(timetable)
             for d, day in enumerate(state):
                 for time, activity in day.items():
                     if activity is not None:
@@ -276,22 +277,22 @@ if __name__ == '__main__':
     constraints = dict()
     print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questions to help us optimise your timetable to suit your needs.\n')
     constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
-    constraints['startWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+    constraints['startWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
-    constraints['endWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+    constraints['endWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     daysRaw = input('Are there any days you would strongly prefer not to be at uni? ' )
     if daysRaw != '':
         constraints['noDays'] = daysRaw.split(',')
-        constraints['noDayWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+        constraints['noDayWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     else:
         constraints['noDays'] = ['']
         constraints['noDayWeight'] = 0
-    constraints['gapsWeight'] = int(input('On a scale of 1-5, how much do you dislike gaps in your timetable? '))
+    constraints['gapsWeight'] = int(input('On a scale of 0-5, how much do you dislike gaps in your timetable? '))
     watchOnlineRaw = input('Are you open to watching lectures online? (Y/N)').capitalize()
     constraints['watchOnline'] = watchOnlineRaw is 'Y' or watchOnlineRaw is 'YES'
 
     # init
-    units = ['AYB340', 'AYB321', 'BSB111', 'EFB210']
+    units = ['CAB202', 'EGB345', 'EGH418', 'EGH424']
     unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
