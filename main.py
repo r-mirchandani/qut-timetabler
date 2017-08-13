@@ -45,9 +45,10 @@ class TimetableProblem(Problem):
 
         self.GAP_PENALTY = constraints['gapsWeight']
         self.DAY_PENALTY = 100
+        self.NODAY_PENALTY = constraints['noDayWeight'] * 60
 
-        self.EARLY_PENALTY = 5 * constraints['startWeight']
-        self.LATE_PENALTY = 5 * constraints['endWeight']
+        self.EARLY_PENALTY = 60 * constraints['startWeight']
+        self.LATE_PENALTY = 60 * constraints['endWeight']
 
     def actions(self, timetable):
         seen = set()
@@ -63,6 +64,7 @@ class TimetableProblem(Problem):
                             break
 
         if len(actions) is 0:
+            print(timetable)
             for d, day in enumerate(state):
                 for time, activity in day.items():
                     if activity is not None:
@@ -105,6 +107,9 @@ class TimetableProblem(Problem):
 
         h = 0
         noDays = None
+        startTime = int(self.constraints['startTime'])
+        endTime = int(self.constraints['endTime'])
+        isLate = False
         if self.constraints['noDays'][0] != '':
             noDays = day2int(self.constraints['noDays'])
         for day in node.state.days:
@@ -115,17 +120,21 @@ class TimetableProblem(Problem):
                     if slot is None:
                         continue
                     else:
+                        if int(time) < startTime:
+                            h += self.EARLY_PENALTY
                         classFound = True
                 else:
                     if slot is None:
                         gap += self.GAP_PENALTY
                     elif gap != 0:
+                        if int(time) >= endTime and not isLate:
+                            h += self.LATE_PENALTY
+                            isLate = True
                         h += gap**2
                         gap = 0
             if classFound:
-                if noDays:
-                    if day in noDays:
-                        h += self.DAY_PENALTY * 2
+                if noDays and day in noDays:
+                    h += self.DAY_PENALTY * 2
                 else:
                     h += self.DAY_PENALTY
         return h
@@ -258,7 +267,6 @@ def getUnitTimes(unit, semester):
         else:
             activities[activityName] = [timeTuple]
 
-    print(activities)
     return activities
 
 # main loop
@@ -268,29 +276,29 @@ if __name__ == '__main__':
     constraints = dict()
     print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questiosn to help us optimise your timetable to suit your needs.\n')
     constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
-    constraints['startWeight'] = int(input('On a scale of 1-10, how strongly would you prefer this? (1-10) '))
+    constraints['startWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
     constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
-    constraints['endWeight'] = int(input('On a scale of 1-10, how strongly would you prefer this? (1-10) '))
+    constraints['endWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
     daysRaw = input('Are there any days you would strongly prefer not to be at uni? ' )
-    constraints['noDays'] = daysRaw.split(',')
-    constraints['gapsWeight'] = int(input('On a scale of 1-10, how much do you dislike gaps in your timetable? '))
+    if daysRaw != '':
+        constraints['noDays'] = daysRaw.split(',')
+        constraints['noDayWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+    else:
+        constraints['noDays'] = ['']
+        constraints['noDayWeight'] = 0
+    constraints['gapsWeight'] = int(input('On a scale of 1-5, how much do you dislike gaps in your timetable? '))
 
     # init
-    units = ['CAB401', 'CAB403', 'CAB240', 'EGH404']
+    units = ['AYB340', 'AYB321', 'BSB111', 'EFB210']
     unitActivities = generateClasses(units, 2)
 
     # create default no conflict solution
-    noConflict = createNoConflictSolution(unitActivities)
     emptyDays = createEmptyDays()
-    print('\n')
-    for days in noConflict:
-        print(days)
 
     activityList = list()
     for unitActivity in unitActivities:
         for key in unitActivity.keys():
             activityList.append(key)
-
 
     timetable = Timetable(emptyDays, activityList) # add unplaced units
     print('Calculating...')
