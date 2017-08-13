@@ -64,7 +64,6 @@ class TimetableProblem(Problem):
                             break
 
         if len(actions) is 0:
-            print(timetable)
             for d, day in enumerate(state):
                 for time, activity in day.items():
                     if activity is not None:
@@ -112,14 +111,14 @@ class TimetableProblem(Problem):
         isLate = False
         if self.constraints['noDays'][0] != '':
             noDays = day2int(self.constraints['noDays'])
-        for day in node.state.days:
+        for d, day in enumerate(node.state.days):
             classFound = False
             gap = 0
             for time, slot in day.items():
                 if not classFound:
                     if slot is None:
                         continue
-                    elif not self.constraints['watchOnline'] or 'LEC' not in slot.split('-')[1]:
+                    elif not (self.constraints['watchOnline'] and 'LEC' in slot.split('-')[1]):
                         if int(time) < startTime:
                             h += self.EARLY_PENALTY
                         classFound = True
@@ -133,8 +132,8 @@ class TimetableProblem(Problem):
                         h += gap**2
                         gap = 0
             if classFound:
-                if noDays and day in noDays:
-                    h += self.DAY_PENALTY * 2
+                if noDays and d in noDays:
+                    h += self.NODAY_PENALTY
             else:
                 h += self.DAY_PENALTY
         return h
@@ -267,33 +266,40 @@ def getUnitTimes(unit, semester):
         else:
             activities[activityName] = [timeTuple]
 
-    print(activities)
     return activities
 
 # main loop
 if __name__ == '__main__':
 
+
+    # init
+    units = ['CAB202', 'EGB345', 'EGH418', 'EGH424']
+    unitActivities = generateClasses(units, 2)
+
+
+
+
+
+
+
+
     # determine timetable constraints
     constraints = dict()
     print('Hi! Thanks for using the QUT Auto-Timetabler. Please answer the following questions to help us optimise your timetable to suit your needs.\n')
     constraints['startTime'] = input('What time would you like your days to preferably start? (HHMM) ')
-    constraints['startWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+    constraints['startWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     constraints['endTime'] = input('What time would you like your days to preferably end? (HHMM) ')
-    constraints['endWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+    constraints['endWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     daysRaw = input('Are there any days you would strongly prefer not to be at uni? ' )
     if daysRaw != '':
         constraints['noDays'] = daysRaw.split(',')
-        constraints['noDayWeight'] = int(input('On a scale of 1-5, how strongly would you prefer this? (1-10) '))
+        constraints['noDayWeight'] = int(input('On a scale of 0-5, how strongly would you prefer this? '))
     else:
         constraints['noDays'] = ['']
         constraints['noDayWeight'] = 0
-    constraints['gapsWeight'] = int(input('On a scale of 1-5, how much do you dislike gaps in your timetable? '))
+    constraints['gapsWeight'] = int(input('On a scale of 0-5, how much do you dislike gaps in your timetable? '))
     watchOnlineRaw = input('Are you open to watching lectures online? (Y/N)').capitalize()
-    constraints['watchOnline'] = watchOnlineRaw is 'Y' or watchOnlineRaw is 'YES'
-
-    # init
-    units = ['CAB202', 'MXB107', 'MXB202', 'IFB130']
-    unitActivities = generateClasses(units, 2)
+    constraints['watchOnline'] = watchOnlineRaw == 'Y' or watchOnlineRaw == 'YES'
 
     # create default no conflict solution
     emptyDays = createEmptyDays()
@@ -304,7 +310,7 @@ if __name__ == '__main__':
             activityList.append(key)
 
     timetable = Timetable(emptyDays, activityList) # add unplaced units
-    print('Calculating...')
+    print('Getting your optimal timetables...')
     tp = TimetableProblem(timetable, unitActivities, constraints)
     bestNodes = best_first_graph_search(tp, lambda s: tp.h(s))
     i = 1
@@ -312,7 +318,9 @@ if __name__ == '__main__':
         if node is not None:
             print('\n############################## SOLUTION ' + str(i) + ' ##############################\n')
             print(node.state)
-            print(tp.h(node))
+            # print(tp.h(node))
+            for unit in node.state.unplacedUnits:
+                print('Could not assign the unit: ' + unit)
             i += 1
         else:
             break

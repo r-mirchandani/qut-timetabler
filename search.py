@@ -243,13 +243,18 @@ def best_first_graph_search(problem, f):
     frontier = PriorityQueue(f)
     frontier.append(node)
     explored = set()
+    t0 = time()
     while frontier:
         node = frontier.pop()
         for i in range(3):
-            if bestNodes[i] is None or (f(node) < f(bestNodes[i]) and len(node.state.unplacedUnits) <= len(bestNodes[i].state.unplacedUnits)) or len(node.state.unplacedUnits) <= len(bestNodes[i].state.unplacedUnits):
+            if bestNodes[i] is None or (f(node) < f(bestNodes[i]) and len(node.state.unplacedUnits) <= len(bestNodes[i].state.unplacedUnits)) or len(node.state.unplacedUnits) < len(bestNodes[i].state.unplacedUnits):
                 bestNodes.insert(i, node)
                 bestNodes.pop()
+                # t0 = time()
                 break
+        t1 = time()
+        if t1 - t0 > 30:
+            return bestNodes
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
